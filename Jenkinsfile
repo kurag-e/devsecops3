@@ -17,27 +17,27 @@ pipeline {
             }
         }
 
-stage('Test') {
-    steps {
-        echo '=== ETAPA 2: TEST ==='
-        sh 'mkdir -p test-results && chmod 777 test-results'
-        sh """
-            docker run --rm \
-              --user root \
-              -v \$(pwd)/test-results:/app/test-results \
-              ${IMAGE_NAME}:${IMAGE_TAG} \
-              sh -c "pytest tests/ -v \
-                       --junitxml=/app/test-results/results.xml \
-                       --no-cov 2>&1 | tee /app/test-results/output.txt"
-        """
-    }
-    post {
-        always {
-            junit allowEmptyResults: true,
-                  testResults: 'test-results/results.xml'
+        stage('Test') {
+            steps {
+                echo '=== ETAPA 2: TEST ==='
+                sh 'mkdir -p test-results && chmod 777 test-results'
+                sh """
+                    docker run --rm \
+                      --user root \
+                      -v \$(pwd)/test-results:/app/test-results \
+                      ${IMAGE_NAME}:${IMAGE_TAG} \
+                      sh -c "pytest tests/ -v \
+                               --junitxml=/app/test-results/results.xml \
+                               --no-cov 2>&1 | tee /app/test-results/output.txt"
+                """
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true,
+                          testResults: 'test-results/results.xml'
+                }
+            }
         }
-    }
-}
 
         stage('Deploy') {
             steps {
@@ -54,6 +54,36 @@ stage('Test') {
                 """
             }
         }
+
+        stage('OWASP ZAP') {
+            steps {
+                echo '=== ETAPA 4: OWASP ZAP ==='
+                sh 'mkdir -p zap-reports && chmod 777 zap-reports'
+                sh """
+                    docker run --rm \
+                      --network jenkins-net \
+                      -v \$(pwd)/zap-reports:/zap/wrk \
+                      ghcr.io/zaproxy/zaproxy:stable \
+                      zap-baseline.py \
+                      -t http://app-staging:5000 \
+                      -r zap-report.html \
+                      -I
+                """
+            }
+            post {
+                always {
+                    publishHTML(target: [
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: 'zap-reports',
+                        reportFiles: 'zap-report.html',
+                        reportName: 'OWASP ZAP Report'
+                    ])
+                }
+            }
+        }
+
     }
 
     post {
