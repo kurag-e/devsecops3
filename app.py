@@ -4,6 +4,8 @@ import os
 from werkzeug.security import generate_password_hash, check_password_hash
 
 app = Flask(__name__)
+from prometheus_flask_exporter import PrometheusMetrics
+metrics = PrometheusMetrics(app)
 app.secret_key = os.environ.get('SECRET_KEY', os.urandom(24))
 
 
