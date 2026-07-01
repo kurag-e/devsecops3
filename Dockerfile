@@ -9,7 +9,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN python create_db.py
+RUN python create_db.py && chown appuser:appuser database.db
 
 USER appuser
 
