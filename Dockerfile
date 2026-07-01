@@ -9,7 +9,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN python create_db.py && chmod 664 database.db && chown appuser:appuser database.db
+RUN python create_db.py && \
+    chown -R appuser:appuser /app && \
+    chmod 755 /app && \
+    chmod 664 /app/database.db
+
 USER appuser
 
 EXPOSE 5000
