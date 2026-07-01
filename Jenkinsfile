@@ -17,26 +17,27 @@ pipeline {
             }
         }
 
-        stage('Test') {
-            steps {
-                echo '=== ETAPA 2: TEST ==='
-                sh """
-                    docker run --rm \
-                      -v \$(pwd)/test-results:/app/test-results \
-                      ${IMAGE_NAME}:${IMAGE_TAG} \
-                      sh -c "pip install pytest pytest-cov --quiet && \
-                             pytest tests/ -v \
-                               --junitxml=/app/test-results/results.xml \
-                               --cov=app --cov-report=xml:/app/test-results/coverage.xml"
-                """
-            }
-            post {
-                always {
-                    junit allowEmptyResults: true,
-                          testResults: 'test-results/results.xml'
-                }
-            }
+stage('Test') {
+    steps {
+        echo '=== ETAPA 2: TEST ==='
+        sh 'mkdir -p test-results && chmod 777 test-results'
+        sh """
+            docker run --rm \
+              --user root \
+              -v \$(pwd)/test-results:/app/test-results \
+              ${IMAGE_NAME}:${IMAGE_TAG} \
+              sh -c "pytest tests/ -v \
+                       --junitxml=/app/test-results/results.xml \
+                       --no-cov 2>&1 | tee /app/test-results/output.txt"
+        """
+    }
+    post {
+        always {
+            junit allowEmptyResults: true,
+                  testResults: 'test-results/results.xml'
         }
+    }
+}
 
         stage('Deploy') {
             steps {

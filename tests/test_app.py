@@ -11,10 +11,9 @@ from werkzeug.security import generate_password_hash
 
 @pytest.fixture
 def client(tmp_path, monkeypatch):
-    db_path = str(tmp_path / "test.db")
     monkeypatch.chdir(tmp_path)
 
-    conn = sqlite3.connect(db_path)
+    conn = sqlite3.connect('database.db')
     c = conn.cursor()
     c.execute('''CREATE TABLE users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -39,7 +38,6 @@ def client(tmp_path, monkeypatch):
     app.config['SECRET_KEY'] = 'test-secret'
     with app.test_client() as client:
         yield client
-
 
 def test_index(client):
     r = client.get('/')
