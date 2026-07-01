@@ -60,15 +60,16 @@ pipeline {
                 echo '=== ETAPA 4: OWASP ZAP ==='
                 sh 'mkdir -p zap-reports && chmod 777 zap-reports'
                 sh """
-                    docker run --rm \
-                      --network jenkins-net \
-                      -v \$(pwd)/zap-reports:/zap/wrk \
-                      ghcr.io/zaproxy/zaproxy:stable \
-                      zap-baseline.py \
-                      -t http://app-staging:5000 \
-                      -r zap-report.html \
-                      -I
-                """
+    docker run --rm \
+      --network jenkins-net \
+      --user root \
+      -v \$(pwd)/zap-reports:/zap/wrk/:rw \
+      ghcr.io/zaproxy/zaproxy:stable \
+      zap-baseline.py \
+      -t http://app-staging:5000 \
+      -r zap-report.html \
+      -I
+"""
             }
             post {
                 always {
